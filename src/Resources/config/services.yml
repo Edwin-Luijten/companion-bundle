@@ -1,0 +1,8 @@
+parameters:
+    debug.container.dump: %kernel.cache_dir%/%kernel.container_class%.xml
+
+services:
+    debug_command:
+      class: MiniSymfony\CompanionBundle\Command\ContainerDebugCommand
+      tags:
+          - { name: console.command }
