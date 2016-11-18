@@ -1,0 +1,42 @@
+{
+  "name": "mini-symfony/companion-bundle",
+  "description": "This package adds several helpers, like the debug:container command",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Edwin Luijten",
+      "email": "edwin.luijten@live.nl"
+    }
+  ],
+  "keywords": [
+    "mini",
+    "symfony",
+    "console"
+  ],
+  "require": {
+    "php": "^5.5.9|^7.0",
+    "symfony/console": "^3.0",
+    "symfony/yaml": "^3.0",
+    "symfony/config": "^3.0",
+    "symfony/dependency-injection": "^3.0",
+    "symfony/filesystem": "^3.0",
+    "symfony/finder": "^3.0",
+    "symfony/http-kernel": "^3.0",
+    "symfony/routing": "^3.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~4.0",
+    "mockery/mockery": "~0.9",
+    "squizlabs/php_codesniffer": "~2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "MiniSymfony\\CompanionBundle\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "MiniSymfony\\CompanionBundle\\CompanionBundle\\Tests\\": "tests/src/"
+    }
+  }
+}

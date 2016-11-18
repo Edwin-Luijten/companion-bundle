@@ -1,0 +1,4 @@
+# Third Party libraries
+/vendor/
+/composer.phar
+composer.lock

@@ -1,0 +1,3 @@
+mini_symfony:
+  debug:
+    container_dump_path: %kernel.cache_dir%/%kernel.container_class%.xml
