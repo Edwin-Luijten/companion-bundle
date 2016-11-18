@@ -11,7 +11,7 @@
 
 namespace MiniSymfony\CompanionBundle\Command;
 
-use AppBundle\Console\Helper\DescriptorHelper;
+use MiniSymfony\CompanionBundle\Console\Helper\DescriptorHelper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
