@@ -4,7 +4,7 @@ mini_symfony:
     debugbar:
       enabled: false
       collectors:
-        request: true
-        phpinfo: true
-        time: true
-        memory: true
+        request: false
+        phpinfo: false
+        time: false
+        memory: false
