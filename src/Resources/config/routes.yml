@@ -1,0 +1,9 @@
+companion_bundle_debugbar_js:
+  path: /debugbar/js
+  defaults:
+    _controller: controller.asset:getJs
+
+companion_bundle_debugbar_css:
+  path: /debugbar/css
+  defaults:
+    _controller: controller.asset:getCss

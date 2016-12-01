@@ -7,25 +7,25 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 class Configuration implements ConfigurationInterface
 {
-    private $alias;
-
-    public function __construct($alias)
-    {
-        $this->alias = $alias;
-    }
-
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root($this->alias);
 
+        $treeBuilder = new TreeBuilder();
+        $rootNode = $treeBuilder->root('mini_symfony');
         $rootNode
             ->children()
-            ->arrayNode('debug')
-            ->children()
-            ->scalarNode('container_dump_path')->end()
-            ->end()
-            ->end() // debug
+                ->arrayNode('debug')
+                    ->children()
+                        ->scalarNode('container_dump_path')->end()
+                        ->arrayNode('debugbar')
+                            ->children()
+                                ->booleanNode('enabled')->defaultTrue()->end()
+                                ->arrayNode('collectors')
+                                    ->prototype('scalar')->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end() // debug
             ->end()
         ;
 

@@ -4,6 +4,7 @@ namespace MiniSymfony\CompanionBundle;
 
 use MiniSymfony\CompanionBundle\DependencyInjection\CompanionExtension;
 use MiniSymfony\CompanionBundle\DependencyInjection\Compilers\ContainerBuilderDebugDumpPass;
+use MiniSymfony\CompanionBundle\DependencyInjection\Compilers\DebugBarPass;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
@@ -17,6 +18,7 @@ class CompanionBundle extends Bundle
     {
         if ($container->getParameter('kernel.debug')) {
             $container->addCompilerPass(new ContainerBuilderDebugDumpPass(), PassConfig::TYPE_AFTER_REMOVING);
+            $container->addCompilerPass(new DebugBarPass());
         }
 
         parent::build($container);
@@ -27,10 +29,6 @@ class CompanionBundle extends Bundle
      */
     public function getContainerExtension()
     {
-        if ($this->extension === null) {
-            return new CompanionExtension();
-        }
-
-        return $this->extension;
+        return new CompanionExtension();
     }
 }

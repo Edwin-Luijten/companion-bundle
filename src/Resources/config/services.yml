@@ -6,3 +6,18 @@ services:
       class: MiniSymfony\CompanionBundle\Command\ContainerDebugCommand
       tags:
           - { name: console.command }
+
+    # Controllers
+    controller.asset:
+      class: MiniSymfony\CompanionBundle\Controllers\AssetController
+      arguments:
+        - '@debugbar'
+        - '@router'
+
+    # Debugbar
+    debugbar.request_subscriber:
+        class: MiniSymfony\CompanionBundle\EventSubscribers\RequestEventSubscriber
+        arguments:
+          - '@debugbar'
+        tags:
+            - { name: kernel.event_subscriber }
