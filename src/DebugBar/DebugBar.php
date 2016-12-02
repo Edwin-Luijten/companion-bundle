@@ -6,7 +6,12 @@ use DebugBar\DataCollector\MemoryCollector;
 use DebugBar\DataCollector\PhpInfoCollector;
 use DebugBar\DataCollector\TimeDataCollector;
 use DebugBar\DebugBar as BaseDebugBar;
+use MiniSymfony\CompanionBundle\DebugBar\DataCollector\ContainerCollector;
+use MiniSymfony\CompanionBundle\DebugBar\DataCollector\EventCollector;
+use MiniSymfony\CompanionBundle\DebugBar\DataCollector\QueryCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\SymfonyRequestCollector;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Router;
@@ -43,12 +48,27 @@ class DebugBar extends BaseDebugBar
         }
 
         if ($this->shouldCollect('time')) {
-            $this->addCollector(new TimeDataCollector());
+            if (!$this->hasCollector('time')) {
+                $this->addCollector(new TimeDataCollector());
+            }
+
             $debugbar->startMeasure('application', 'Application');
         }
 
         if ($this->shouldCollect('memory')) {
             $this->addCollector(new MemoryCollector());
+        }
+
+        if ($this->shouldCollect('db')) {
+            if ($this->hasCollector('time')) {
+                $timeCollector = $debugbar->getCollector('time');
+            } else {
+                $timeCollector = null;
+            }
+
+            $queryCollector = new QueryCollector($timeCollector);
+
+            $this->addCollector($queryCollector);
         }
     }
 
@@ -151,10 +171,21 @@ class DebugBar extends BaseDebugBar
      * @param Response $response
      * @return Response
      */
-    public function modifyResponse(Request $request, Response $response)
+    public function modifyResponse(Request $request, Response $response, EventDispatcherInterface $dispatcher)
     {
         if ($this->shouldCollect('request')) {
             $this->addCollector(new SymfonyRequestCollector($request, $response));
+        }
+
+        if ($this->shouldCollect('events')) {
+
+            $this->addCollector(new EventCollector($_SERVER['REQUEST_TIME_FLOAT']));
+            $eventCollector = $this->getCollector('events');
+
+            var_dump($dispatcher->getTimings()); exit;
+            foreach ($dispatcher->getTimings() as $timing) {
+                print_r($timing); exit;
+            }
         }
 
         $this->inject($response);

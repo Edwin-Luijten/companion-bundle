@@ -7,6 +7,20 @@ services:
       tags:
           - { name: console.command }
 
+    debug.event_data_collector:
+      class: MiniSymfony\CompanionBundle\DebugBar\DataCollector\EventCollector
+      arguments:
+        - ~
+        - '@event_dispatcher'
+      tags:
+        - { name: kernel.event_listener, event: '#', method: 'onWildcardEvent' }
+
+    companion.event_dispatcher:
+        class: MiniSymfony\CompanionBundle\EventDispatcher\ContainerAwareEventDispatcher
+        arguments:
+            - '@service_container'
+            - '@companion.event_dispatcher.inner'
+
     # Controllers
     controller.asset:
       class: MiniSymfony\CompanionBundle\Controllers\AssetController
@@ -19,5 +33,6 @@ services:
         class: MiniSymfony\CompanionBundle\EventSubscribers\RequestEventSubscriber
         arguments:
           - '@debugbar'
+          - '@event_dispatcher'
         tags:
             - { name: kernel.event_subscriber }

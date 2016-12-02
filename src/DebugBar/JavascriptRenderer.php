@@ -23,7 +23,9 @@ class JavascriptRenderer extends BaseJavascriptRenderer
     {
         parent::__construct($debugBar, $baseUrl, $basePath);
 
-        $this->router = $router;
+        $this->router                    = $router;
+        $this->cssFiles['companion']     = __DIR__ . '/../Resources/assets/debugbar.css';
+        $this->cssVendors['fontawesome'] = __DIR__ . '/../Resources/assets/vendor/font-awesome/style.css';
     }
 
     /**

@@ -2,6 +2,8 @@
 
 namespace MiniSymfony\CompanionBundle\DependencyInjection\Compilers;
 
+use DebugBar\DataCollector\TimeDataCollector;
+use MiniSymfony\CompanionBundle\DebugBar\DataCollector\ContainerCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DebugBar;
 use MiniSymfony\CompanionBundle\DependencyInjection\Configuration;
 use Symfony\Component\Config\Definition\Processor;

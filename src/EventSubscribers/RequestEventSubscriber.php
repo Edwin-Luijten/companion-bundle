@@ -3,6 +3,8 @@
 namespace MiniSymfony\CompanionBundle\EventSubscribers;
 
 use MiniSymfony\CompanionBundle\DebugBar\DebugBar;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -15,12 +17,19 @@ class RequestEventSubscriber implements EventSubscriberInterface
     private $debugBar;
 
     /**
+     * @var EventDispatcherInterface
+     */
+    private $dispatcher;
+
+    /**
      * RequestEventSubscriber constructor.
      * @param DebugBar $debugBar
+     * @param EventDispatcherInterface $dispatcher
      */
-    public function __construct(DebugBar $debugBar)
+    public function __construct(DebugBar $debugBar, EventDispatcherInterface $dispatcher)
     {
         $this->debugBar = $debugBar;
+        $this->dispatcher = $dispatcher;
     }
 
     /**
@@ -52,7 +61,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $this->debugBar->modifyResponse($request, $response);
+        $this->debugBar->modifyResponse($request, $response, $this->dispatcher);
     }
 
 }
