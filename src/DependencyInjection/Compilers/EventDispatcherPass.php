@@ -14,7 +14,7 @@ class EventDispatcherPass implements CompilerPassInterface
      */
     public function process(ContainerBuilder $container)
     {
-        $container->setDefinition('event_dispatcher', $container->getDefinition('companion.event_dispatcher'));
-        $container->removeDefinition('companion.event_dispatcher');
+        $container->setDefinition('event_dispatcher', $container->getDefinition('companion.timed_event_dispatcher'));
+        $container->removeDefinition('companion.timed_event_dispatcher');
     }
 }

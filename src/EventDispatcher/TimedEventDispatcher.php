@@ -2,10 +2,11 @@
 
 namespace MiniSymfony\CompanionBundle\EventDispatcher;
 
+use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
 use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class TimedEventDispatcher extends WildcardEventDispatcher implements EventDispatcherInterface
+class TimedEventDispatcher extends ContainerAwareEventDispatcher implements EventDispatcherInterface
 {
     /**
      * @var array
@@ -30,10 +31,10 @@ class TimedEventDispatcher extends WildcardEventDispatcher implements EventDispa
             }
 
             $start = microtime(true);
-            echo 1;
+
             call_user_func($listener, $event, $eventName, $this);
 
-            $this->timings[$eventName][$listener] = [
+            $this->timings[$eventName][$listener[1]] = [
                 'start' => $start,
                 'end'   => microtime(true),
             ];

@@ -4,7 +4,6 @@ namespace MiniSymfony\CompanionBundle\DebugBar\DataCollector;
 
 
 use DebugBar\DataCollector\TimeDataCollector;
-use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\VarDumper\VarDumper;
 
@@ -16,28 +15,30 @@ class EventCollector extends TimeDataCollector
     /** @var VarDumper */
     protected $exporter;
 
-    protected $events = [];
     /**
      * EventCollector constructor.
      * @param null $requestStartTime
      */
-    public function __construct($requestStartTime = null)
+    public function __construct($requestStartTime = null, EventDispatcherInterface $dispatcher)
     {
         parent::__construct($requestStartTime);
 
         $this->exporter   = new VarDumper();
-    }
-
-    public function onWildcardEvent(Event $event)
-    {
-        echo 1;
+        $this->dispatcher = $dispatcher;
     }
 
     public function collect()
     {
+        foreach ($this->dispatcher->getTimings() as $event => $timings) {
+            foreach ($timings as $handler => $timing) {
+                $this->addMeasure($event . '@' . $handler, $timing['start'], $timing['end']);
+            }
+        }
+
         $data = parent::collect();
 
         $data['nb_measures'] = count($data['measures']);
+
         return $data;
     }
 
@@ -52,11 +53,11 @@ class EventCollector extends TimeDataCollector
             "events"       => [
                 "icon"    => "tasks",
                 "widget"  => "PhpDebugBar.Widgets.TimelineWidget",
-                "map"     => "event",
+                "map"     => "events",
                 "default" => "{}",
             ],
             'events:badge' => [
-                'map'     => 'event.nb_measures',
+                'map'     => 'events.nb_measures',
                 'default' => 0,
             ],
         ];

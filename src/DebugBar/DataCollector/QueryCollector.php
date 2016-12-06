@@ -5,6 +5,7 @@ namespace MiniSymfony\CompanionBundle\DebugBar\DataCollector;
 
 use DebugBar\DataCollector\PDO\PDOCollector;
 use DebugBar\DataCollector\TimeDataCollector;
+use Doctrine\DBAL\Connection;
 
 /**
  * Collects data about SQL statements executed with PDO
@@ -19,6 +20,7 @@ class QueryCollector extends PDOCollector
     protected $explainTypes = ['SELECT']; // ['SELECT', 'INSERT', 'UPDATE', 'DELETE']; for MySQL 5.6.3+
     protected $showHints = false;
     protected $reflection = [];
+
     /**
      * @param TimeDataCollector $timeCollector
      */
@@ -72,7 +74,7 @@ class QueryCollector extends PDOCollector
      * @param string $query
      * @param array $bindings
      * @param float $time
-     * @param \Illuminate\Database\Connection $connection
+     * @param Connection $connection
      */
     public function addQuery($query, $bindings, $time, $connection)
     {
@@ -81,13 +83,14 @@ class QueryCollector extends PDOCollector
         $endTime = microtime(true);
         $startTime = $endTime - $time;
         $hints = $this->performQueryAnalysis($query);
-        $pdo = $connection->getPdo();
-        $bindings = $connection->prepareBindings($bindings);
+
         // Run EXPLAIN on this query (if needed)
         if ($this->explainQuery && preg_match('/^('.implode($this->explainTypes).') /i', $query)) {
-            $statement = $pdo->prepare('EXPLAIN ' . $query);
+            $statement = $connection->prepare('EXPLAIN ' . $query);
             $statement->execute($bindings);
             $explainResults = $statement->fetchAll(\PDO::FETCH_CLASS);
+
+            print_r($explainResults); exit;
         }
         $bindings = $this->checkBindings($bindings);
         if (!empty($bindings) && $this->renderSqlWithParams) {
@@ -98,7 +101,7 @@ class QueryCollector extends PDOCollector
                 $regex = is_numeric($key)
                     ? "/\?(?=(?:[^'\\\']*'[^'\\\']*')*[^'\\\']*$)/"
                     : "/:{$key}(?=(?:[^'\\\']*'[^'\\\']*')*[^'\\\']*$)/";
-                $query = preg_replace($regex, $pdo->quote($binding), $query, 1);
+                $query = preg_replace($regex, $connection->quote($binding), $query, 1);
             }
         }
         $source = null;
@@ -114,7 +117,7 @@ class QueryCollector extends PDOCollector
             'time' => $time,
             'source' => $source,
             'explain' => $explainResults,
-            'connection' => $connection->getDatabaseName(),
+            'connection' => $connection->getDatabase(),
             'hints' => $this->showHints ? $hints : null,
         ];
         if ($this->timeCollector !== null) {

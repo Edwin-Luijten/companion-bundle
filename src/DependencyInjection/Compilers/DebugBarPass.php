@@ -34,7 +34,7 @@ class DebugBarPass implements CompilerPassInterface
             $definition = new Definition(DebugBar::class);
             $definition->addArgument($container->getDefinition('router'));
             $definition->addArgument($config['debug']['debugbar']['collectors']);
-            $definition->addMethodCall('boot');
+            $definition->addMethodCall('boot', [$container->getDefinition('dbal')]);
             $container->setDefinition('debugbar', $definition);
         }
     }

@@ -1,25 +1,32 @@
 parameters:
-    debug.container.dump: %kernel.cache_dir%/%kernel.container_class%.xml
+    debug.container.dump: '%kernel.cache_dir%/%kernel.container_class%.xml'
 
 services:
-    debug_command:
+    #
+    # Debug console commands
+    #
+    debug_container_command:
       class: MiniSymfony\CompanionBundle\Command\ContainerDebugCommand
       tags:
           - { name: console.command }
 
-    debug.event_data_collector:
-      class: MiniSymfony\CompanionBundle\DebugBar\DataCollector\EventCollector
-      arguments:
-        - ~
-        - '@event_dispatcher'
+    debug_router_command:
+      class: MiniSymfony\CompanionBundle\Command\RouterDebugCommand
       tags:
-        - { name: kernel.event_listener, event: '#', method: 'onWildcardEvent' }
+        - { name: console.command }
 
-    companion.event_dispatcher:
-        class: MiniSymfony\CompanionBundle\EventDispatcher\ContainerAwareEventDispatcher
+    debug_events_command:
+      class: MiniSymfony\CompanionBundle\Command\EventDispatcherDebugCommand
+      tags:
+        - { name: console.command }
+
+    #
+    # Web profiler
+    #
+    companion.timed_event_dispatcher:
+        class: MiniSymfony\CompanionBundle\EventDispatcher\TimedEventDispatcher
         arguments:
             - '@service_container'
-            - '@companion.event_dispatcher.inner'
 
     # Controllers
     controller.asset:

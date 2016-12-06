@@ -2,15 +2,15 @@
 
 namespace MiniSymfony\CompanionBundle\DebugBar;
 
+use DebugBar\DataCollector\ExceptionsCollector;
 use DebugBar\DataCollector\MemoryCollector;
 use DebugBar\DataCollector\PhpInfoCollector;
 use DebugBar\DataCollector\TimeDataCollector;
 use DebugBar\DebugBar as BaseDebugBar;
-use MiniSymfony\CompanionBundle\DebugBar\DataCollector\ContainerCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\EventCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\QueryCollector;
+use MiniSymfony\CompanionBundle\DebugBar\DataCollector\RouteCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\SymfonyRequestCollector;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -39,7 +39,7 @@ class DebugBar extends BaseDebugBar
         $this->enabledCollectors = $collectors;
     }
 
-    public function boot()
+    public function boot(\Doctrine\DBAL\Connection $connection)
     {
         $debugbar = $this;
 
@@ -59,16 +59,25 @@ class DebugBar extends BaseDebugBar
             $this->addCollector(new MemoryCollector());
         }
 
-        if ($this->shouldCollect('db')) {
-            if ($this->hasCollector('time')) {
-                $timeCollector = $debugbar->getCollector('time');
-            } else {
-                $timeCollector = null;
+        if ($this->shouldCollect('exceptions')) {
+            try {
+                $exceptionCollector = new ExceptionsCollector();
+                $exceptionCollector->setChainExceptions(true);
+                $this->addCollector($exceptionCollector);
+            } catch (\Exception $e) {
+            }
+        }
+
+        if ($this->shouldCollect('queries')) {
+            $debugStack = $connection->getConfiguration()->getSQLLogger();
+            $collector = new QueryCollector(new TimeDataCollector());
+
+
+            foreach ($debugStack->queries as $query) {
+                $collector->addQuery($query['sql'], $query['params'], $query['executionMS'], $connection);
             }
 
-            $queryCollector = new QueryCollector($timeCollector);
-
-            $this->addCollector($queryCollector);
+            $this->addCollector($collector);
         }
     }
 
@@ -177,15 +186,12 @@ class DebugBar extends BaseDebugBar
             $this->addCollector(new SymfonyRequestCollector($request, $response));
         }
 
+        if ($this->shouldCollect('routing')) {
+            $this->addCollector(new RouteCollector($request, $this->router));
+        }
+
         if ($this->shouldCollect('events')) {
-
-            $this->addCollector(new EventCollector($_SERVER['REQUEST_TIME_FLOAT']));
-            $eventCollector = $this->getCollector('events');
-
-            var_dump($dispatcher->getTimings()); exit;
-            foreach ($dispatcher->getTimings() as $timing) {
-                print_r($timing); exit;
-            }
+            $this->addCollector(new EventCollector($_SERVER['REQUEST_TIME_FLOAT'], $dispatcher));
         }
 
         $this->inject($response);
