@@ -2,7 +2,17 @@ parameters:
     debug.container.dump: %kernel.cache_dir%/%kernel.container_class%.xml
 
 services:
-    debug_command:
+    debug_container_command:
       class: MiniSymfony\CompanionBundle\Command\ContainerDebugCommand
       tags:
           - { name: console.command }
+
+    debug_router_command:
+      class: MiniSymfony\CompanionBundle\Command\RouterDebugCommand
+      tags:
+        - { name: console.command }
+
+    debug_events_command:
+      class: MiniSymfony\CompanionBundle\Command\EventDispatcherDebugCommand
+      tags:
+        - { name: console.command }
