@@ -7,13 +7,16 @@ use DebugBar\DataCollector\MemoryCollector;
 use DebugBar\DataCollector\PhpInfoCollector;
 use DebugBar\DataCollector\TimeDataCollector;
 use DebugBar\DebugBar as BaseDebugBar;
+use Gnugat\MicroFrameworkBundle\Service\KernelApplication;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\EventCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\QueryCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\RouteCollector;
+use MiniSymfony\CompanionBundle\DebugBar\DataCollector\KernelCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\SymfonyRequestCollector;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Routing\Router;
 
 class DebugBar extends BaseDebugBar
@@ -26,17 +29,23 @@ class DebugBar extends BaseDebugBar
     /**
      * @var array
      */
+    private $config;
+
+    /**
+     * @var array
+     */
     private $enabledCollectors;
 
     /**
      * DebugBar constructor.
      * @param Router $router
-     * @param array $collectors
+     * @param array $config
      */
-    public function __construct(Router $router, array $collectors)
+    public function __construct(Router $router, array $config)
     {
-        $this->router            = $router;
-        $this->enabledCollectors = $collectors;
+        $this->router = $router;
+        $this->config = $config;
+        $this->enabledCollectors = $config['collectors'];
     }
 
     public function boot(\Doctrine\DBAL\Connection $connection)
@@ -47,16 +56,16 @@ class DebugBar extends BaseDebugBar
             $this->addCollector(new PhpInfoCollector());
         }
 
+        if ($this->shouldCollect('memory')) {
+            $this->addCollector(new MemoryCollector());
+        }
+
         if ($this->shouldCollect('time')) {
             if (!$this->hasCollector('time')) {
                 $this->addCollector(new TimeDataCollector());
             }
 
             $debugbar->startMeasure('application', 'Application');
-        }
-
-        if ($this->shouldCollect('memory')) {
-            $this->addCollector(new MemoryCollector());
         }
 
         if ($this->shouldCollect('exceptions')) {
@@ -69,12 +78,33 @@ class DebugBar extends BaseDebugBar
         }
 
         if ($this->shouldCollect('queries')) {
+            $options = $this->config['options']['queries'];
             $debugStack = $connection->getConfiguration()->getSQLLogger();
-            $collector = new QueryCollector(new TimeDataCollector());
 
+            if ($this->hasCollector('time') && $options['timeline']) {
+                $timeCollector = $debugbar->getCollector('time');
+            } else {
+                $timeCollector = new TimeDataCollector();
+            }
 
-            foreach ($debugStack->queries as $query) {
-                $collector->addQuery($query['sql'], $query['params'], $query['executionMS'], $connection);
+            $collector = new QueryCollector($timeCollector);
+
+            if ($options['with_params']) {
+                $collector->setRenderSqlWithParams(true);
+            }
+
+            if ($options['explain']['enabled']) {
+                $collector->setExplainSource(true, $options['explain']['types']);
+            }
+
+            if ($options['hints']) {
+                $collector->setShowHints(true);
+            }
+
+            if (!empty($debugStack->queries)) {
+                foreach ($debugStack->queries as $query) {
+                    $collector->addQuery($query['sql'], $query['params'], $query['executionMS'], $connection);
+                }
             }
 
             $this->addCollector($collector);
@@ -180,8 +210,10 @@ class DebugBar extends BaseDebugBar
      * @param Response $response
      * @return Response
      */
-    public function modifyResponse(Request $request, Response $response, EventDispatcherInterface $dispatcher)
+    public function modifyResponse(Request $request, Response $response, EventDispatcherInterface $dispatcher, KernelInterface $kernel)
     {
+        // Late bindings
+
         if ($this->shouldCollect('request')) {
             $this->addCollector(new SymfonyRequestCollector($request, $response));
         }
@@ -191,7 +223,16 @@ class DebugBar extends BaseDebugBar
         }
 
         if ($this->shouldCollect('events')) {
-            $this->addCollector(new EventCollector($_SERVER['REQUEST_TIME_FLOAT'], $dispatcher));
+            if ($this->hasCollector('time')) {
+                $timeCollector = $this->getCollector('time');
+            } else {
+                $timeCollector = new TimeDataCollector();
+            }
+            $this->addCollector(new EventCollector($_SERVER['REQUEST_TIME_FLOAT'], $dispatcher, $timeCollector));
+        }
+
+        if ($this->shouldCollect('kernel')) {
+            $this->addCollector(new KernelCollector($kernel));
         }
 
         $this->inject($response);
@@ -206,7 +247,7 @@ class DebugBar extends BaseDebugBar
     {
         $content = $response->getContent();
 
-        $renderer        = $this->getJavascriptRenderer();
+        $renderer = $this->getJavascriptRenderer();
         $renderedContent = $renderer->renderAssets() . $renderer->render();
 
         $pos = strripos($content, '</body>');

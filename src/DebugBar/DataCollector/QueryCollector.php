@@ -15,7 +15,6 @@ class QueryCollector extends PDOCollector
     protected $timeCollector;
     protected $queries = [];
     protected $renderSqlWithParams = false;
-    protected $findSource = false;
     protected $explainQuery = false;
     protected $explainTypes = ['SELECT']; // ['SELECT', 'INSERT', 'UPDATE', 'DELETE']; for MySQL 5.6.3+
     protected $showHints = false;
@@ -28,6 +27,7 @@ class QueryCollector extends PDOCollector
     {
         $this->timeCollector = $timeCollector;
     }
+
     /**
      * Renders the SQL of traced statements with params embedded
      *
@@ -38,6 +38,7 @@ class QueryCollector extends PDOCollector
     {
         $this->renderSqlWithParams = $enabled;
     }
+
     /**
      * Show or hide the hints in the parameters
      *
@@ -47,15 +48,7 @@ class QueryCollector extends PDOCollector
     {
         $this->showHints = $enabled;
     }
-    /**
-     * Enable/disable finding the source
-     *
-     * @param bool $value
-     */
-    public function setFindSource($value = true)
-    {
-        $this->findSource = (bool) $value;
-    }
+
     /**
      * Enable/disable the EXPLAIN queries
      *
@@ -66,7 +59,7 @@ class QueryCollector extends PDOCollector
     {
         $this->explainQuery = $enabled;
         if($types){
-            $this->explainTypes = $types;
+            $this->explainTypes = array_unique($types);
         }
     }
     /**
@@ -89,9 +82,8 @@ class QueryCollector extends PDOCollector
             $statement = $connection->prepare('EXPLAIN ' . $query);
             $statement->execute($bindings);
             $explainResults = $statement->fetchAll(\PDO::FETCH_CLASS);
-
-            print_r($explainResults); exit;
         }
+
         $bindings = $this->checkBindings($bindings);
         if (!empty($bindings) && $this->renderSqlWithParams) {
             foreach ($bindings as $key => $binding) {
@@ -104,18 +96,12 @@ class QueryCollector extends PDOCollector
                 $query = preg_replace($regex, $connection->quote($binding), $query, 1);
             }
         }
-        $source = null;
-        if ($this->findSource) {
-            try {
-                $source = $this->findSource();
-            } catch (\Exception $e) {
-            }
-        }
+
         $this->queries[] = [
             'query' => $query,
             'bindings' => $this->escapeBindings($bindings),
             'time' => $time,
-            'source' => $source,
+            'source' => null,
             'explain' => $explainResults,
             'connection' => $connection->getDatabase(),
             'hints' => $this->showHints ? $hints : null,
@@ -191,91 +177,7 @@ class QueryCollector extends PDOCollector
         }
         return implode("<br />", $hints);
     }
-    /**
-     * Use a backtrace to search for the origin of the query.
-     */
-    protected function findSource()
-    {
-        $traces = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS | DEBUG_BACKTRACE_PROVIDE_OBJECT);
-        foreach ($traces as $trace) {
-            if (isset($trace['class']) && isset($trace['file']) && strpos(
-                    $trace['file'],
-                    DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR
-                ) === false
-            ) {
-                if (isset($trace['object']) && is_a($trace['object'], 'Twig_Template')) {
-                    list($file, $line) = $this->getTwigInfo($trace);
-                } elseif (strpos($trace['file'], storage_path()) !== false) {
-                    $hash = pathinfo($trace['file'], PATHINFO_FILENAME);
-                    $line = isset($trace['line']) ? $trace['line'] : '?';
-                    if ($name = $this->findViewFromHash($hash)) {
-                        return 'view::' . $name . ':' . $line;
-                    }
-                    return 'view::' . $hash . ':' . $line;
-                } else {
-                    $file = $trace['file'];
-                    $line = isset($trace['line']) ? $trace['line'] : '?';
-                }
-                return $this->normalizeFilename($file) . ':' . $line;
-            } elseif (isset($trace['function']) && $trace['function'] == 'Illuminate\Routing\{closure}') {
-                return 'Route binding';
-            }
-        }
-    }
-    /**
-     * Find the template name from the hash.
-     *
-     * @param  string $hash
-     * @return null|string
-     */
-    protected function findViewFromHash($hash)
-    {
-        $finder = app('view')->getFinder();
-        if (isset($this->reflection['viewfinderViews'])) {
-            $property = $this->reflection['viewfinderViews'];
-        } else {
-            $reflection = new \ReflectionClass($finder);
-            $property = $reflection->getProperty('views');
-            $property->setAccessible(true);
-            $this->reflection['viewfinderViews'] = $property;
-        }
-        foreach ($property->getValue($finder) as $name => $path){
-            if (sha1($path) == $hash || md5($path) == $hash) {
-                return $name;
-            }
-        }
-    }
-    /**
-     * Get the filename/line from a Twig template trace
-     *
-     * @param array $trace
-     * @return array The file and line
-     */
-    protected function getTwigInfo($trace)
-    {
-        $file = $trace['object']->getTemplateName();
-        if (isset($trace['line'])) {
-            foreach ($trace['object']->getDebugInfo() as $codeLine => $templateLine) {
-                if ($codeLine <= $trace['line']) {
-                    return [$file, $templateLine];
-                }
-            }
-        }
-        return [$file, -1];
-    }
-    /**
-     * Shorten the path by removing the relative links and base dir
-     *
-     * @param string $path
-     * @return string
-     */
-    protected function normalizeFilename($path)
-    {
-        if (file_exists($path)) {
-            $path = realpath($path);
-        }
-        return str_replace(base_path(), '', $path);
-    }
+
     /**
      * Reset the queries.
      */

@@ -41,5 +41,6 @@ services:
         arguments:
           - '@debugbar'
           - '@event_dispatcher'
+          - '@kernel'
         tags:
             - { name: kernel.event_subscriber }

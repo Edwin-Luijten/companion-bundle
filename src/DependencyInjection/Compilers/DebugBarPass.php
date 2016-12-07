@@ -2,8 +2,6 @@
 
 namespace MiniSymfony\CompanionBundle\DependencyInjection\Compilers;
 
-use DebugBar\DataCollector\TimeDataCollector;
-use MiniSymfony\CompanionBundle\DebugBar\DataCollector\ContainerCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DebugBar;
 use MiniSymfony\CompanionBundle\DependencyInjection\Configuration;
 use Symfony\Component\Config\Definition\Processor;
@@ -15,6 +13,8 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 class DebugBarPass implements CompilerPassInterface
 {
+    private $config;
+
     /**
      * You can modify the container here before it is dumped to PHP code.
      *
@@ -28,12 +28,12 @@ class DebugBarPass implements CompilerPassInterface
         $configs = $container->getExtensionConfig('mini_symfony');
 
         $processor = new Processor();
-        $config    = $processor->processConfiguration(new Configuration(), [$configs[1], $configs[0]]);
+        $this->config    = $processor->processConfiguration(new Configuration(), [$configs[1], $configs[0]]);
 
-        if ($config['debug']['debugbar']['enabled'] === true) {
+        if ($this->config['debug']['debugbar']['enabled'] === true) {
             $definition = new Definition(DebugBar::class);
             $definition->addArgument($container->getDefinition('router'));
-            $definition->addArgument($config['debug']['debugbar']['collectors']);
+            $definition->addArgument($this->config['debug']['debugbar']);
             $definition->addMethodCall('boot', [$container->getDefinition('dbal')]);
             $container->setDefinition('debugbar', $definition);
         }

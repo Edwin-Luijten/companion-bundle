@@ -8,6 +8,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 class RequestEventSubscriber implements EventSubscriberInterface
 {
@@ -21,15 +22,18 @@ class RequestEventSubscriber implements EventSubscriberInterface
      */
     private $dispatcher;
 
+    private $kernel;
+
     /**
      * RequestEventSubscriber constructor.
      * @param DebugBar $debugBar
      * @param EventDispatcherInterface $dispatcher
      */
-    public function __construct(DebugBar $debugBar, EventDispatcherInterface $dispatcher)
+    public function __construct(DebugBar $debugBar, EventDispatcherInterface $dispatcher, KernelInterface $kernel)
     {
         $this->debugBar = $debugBar;
         $this->dispatcher = $dispatcher;
+        $this->kernel = $kernel;
     }
 
     /**
@@ -61,7 +65,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $this->debugBar->modifyResponse($request, $response, $this->dispatcher);
+        $this->debugBar->modifyResponse($request, $response, $this->dispatcher, $this->kernel);
     }
 
 }

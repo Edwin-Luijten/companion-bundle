@@ -44,7 +44,7 @@ class RouteCollector extends DataCollector implements Renderable
 
         $result = [
             'uri' => $this->router->generate($name, $this->request->attributes->get('_route_params'), Router::ABSOLUTE_URL),
-            'path' => $route->getPath() ?: '-',
+            'path' => $this->request->getMethod() . ' ' . $route->getPath() ?: '-',
             'name' => $name,
             'methods' => ($route->getMethods()?: 'ANY'),
             'options' => $route->getOptions(),
