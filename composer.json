@@ -41,7 +41,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "MiniSymfony\\CompanionBundle\\CompanionBundle\\Tests\\": "tests/src/"
+      "MiniSymfony\\CompanionBundle\\Tests\\": "tests/src/"
     }
   }
 }
