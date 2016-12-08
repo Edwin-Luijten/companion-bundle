@@ -7,11 +7,10 @@ use DebugBar\DataCollector\MemoryCollector;
 use DebugBar\DataCollector\PhpInfoCollector;
 use DebugBar\DataCollector\TimeDataCollector;
 use DebugBar\DebugBar as BaseDebugBar;
-use Gnugat\MicroFrameworkBundle\Service\KernelApplication;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\EventCollector;
+use MiniSymfony\CompanionBundle\DebugBar\DataCollector\KernelCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\QueryCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\RouteCollector;
-use MiniSymfony\CompanionBundle\DebugBar\DataCollector\KernelCollector;
 use MiniSymfony\CompanionBundle\DebugBar\DataCollector\SymfonyRequestCollector;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -37,18 +36,31 @@ class DebugBar extends BaseDebugBar
     private $enabledCollectors;
 
     /**
+     * @var \Doctrine\DBAL\Connection
+     */
+    private $dbalConnection;
+
+    /**
      * DebugBar constructor.
      * @param Router $router
      * @param array $config
      */
     public function __construct(Router $router, array $config)
     {
-        $this->router = $router;
-        $this->config = $config;
+        $this->router            = $router;
+        $this->config            = $config;
         $this->enabledCollectors = $config['collectors'];
     }
 
-    public function boot(\Doctrine\DBAL\Connection $connection)
+    /**
+     * @param \Doctrine\DBAL\Connection $connection
+     */
+    public function setDbalConnection(\Doctrine\DBAL\Connection $connection)
+    {
+        $this->dbalConnection = $connection;
+    }
+
+    public function boot()
     {
         $debugbar = $this;
 
@@ -78,36 +90,46 @@ class DebugBar extends BaseDebugBar
         }
 
         if ($this->shouldCollect('queries')) {
-            $options = $this->config['options']['queries'];
-            $debugStack = $connection->getConfiguration()->getSQLLogger();
+            if (!empty($this->dbalConnection)) {
+                $options = $this->config['options']['queries'];
 
-            if ($this->hasCollector('time') && $options['timeline']) {
-                $timeCollector = $debugbar->getCollector('time');
-            } else {
-                $timeCollector = new TimeDataCollector();
-            }
+                $debugStack = $this->dbalConnection->getConfiguration()->getSQLLogger();
 
-            $collector = new QueryCollector($timeCollector);
+                if (!empty($debugStack)) {
+                    if ($this->hasCollector('time') && $options['timeline']) {
+                        $timeCollector = $debugbar->getCollector('time');
+                    } else {
+                        $timeCollector = new TimeDataCollector();
+                    }
 
-            if ($options['with_params']) {
-                $collector->setRenderSqlWithParams(true);
-            }
+                    $collector = new QueryCollector($timeCollector);
 
-            if ($options['explain']['enabled']) {
-                $collector->setExplainSource(true, $options['explain']['types']);
-            }
+                    if ($options['with_params']) {
+                        $collector->setRenderSqlWithParams(true);
+                    }
 
-            if ($options['hints']) {
-                $collector->setShowHints(true);
-            }
+                    if ($options['explain']['enabled']) {
+                        $collector->setExplainSource(true, $options['explain']['types']);
+                    }
 
-            if (!empty($debugStack->queries)) {
-                foreach ($debugStack->queries as $query) {
-                    $collector->addQuery($query['sql'], $query['params'], $query['executionMS'], $connection);
+                    if ($options['hints']) {
+                        $collector->setShowHints(true);
+                    }
+
+                    if (!empty($debugStack->queries)) {
+                        foreach ($debugStack->queries as $query) {
+                            $collector->addQuery(
+                                $query['sql'],
+                                $query['params'],
+                                $query['executionMS'],
+                                $this->dbalConnection
+                            );
+                        }
+                    }
+
+                    $this->addCollector($collector);
                 }
             }
-
-            $this->addCollector($collector);
         }
     }
 
@@ -210,8 +232,12 @@ class DebugBar extends BaseDebugBar
      * @param Response $response
      * @return Response
      */
-    public function modifyResponse(Request $request, Response $response, EventDispatcherInterface $dispatcher, KernelInterface $kernel)
-    {
+    public function modifyResponse(
+        Request $request,
+        Response $response,
+        EventDispatcherInterface $dispatcher,
+        KernelInterface $kernel
+    ) {
         // Late bindings
 
         if ($this->shouldCollect('request')) {
@@ -247,7 +273,7 @@ class DebugBar extends BaseDebugBar
     {
         $content = $response->getContent();
 
-        $renderer = $this->getJavascriptRenderer();
+        $renderer        = $this->getJavascriptRenderer();
         $renderedContent = $renderer->renderAssets() . $renderer->render();
 
         $pos = strripos($content, '</body>');

@@ -31,10 +31,20 @@ class DebugBarPass implements CompilerPassInterface
         $this->config = $processor->processConfiguration(new Configuration(), [$configs[1], $configs[0]]);
 
         if ($this->config['debug']['debugbar']['enabled'] === true) {
+            // Only enable if dbal service is configured
+            if (!$container->hasDefinition('dbal')) {
+                $this->config['debug']['debugbar']['collectors']['queries'] = false;
+            }
+
             $definition = new Definition(DebugBar::class);
             $definition->addArgument($container->getDefinition('router'));
             $definition->addArgument($this->config['debug']['debugbar']);
-            $definition->addMethodCall('boot', [$container->getDefinition('dbal')]);
+
+            if ($container->hasDefinition('dbal')) {
+                $definition->addMethodCall('setDbalConnection', [$container->getDefinition('dbal')]);
+            }
+
+            $definition->addMethodCall('boot');
             $container->setDefinition('debugbar', $definition);
         } else {
             $container->removeDefinition('controller.asset');

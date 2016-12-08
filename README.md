@@ -23,25 +23,9 @@ With the debug bar you can gather information about the following:
 ```yaml
 mini_symfony:
   debug:
-    container_dump_path: '%kernel.cache_dir%/%kernel.container_class%.xml'
     debugbar:
       enabled: false
-      # Vendor files are included by default, but can be set to false.
-      # This can also be set to 'js' or 'css', to only include javascript or css vendor files.
-      # Vendor files are for css: font-awesome (including fonts) and highlight.js (css files)
-      # and for js: jquery and and highlight.js
-      # So if you want syntax highlighting, set it to true.
-      # jQuery is set to not conflict with existing jQuery scripts.
-      include_vendors: true
-
-      # The Debugbar can capture Ajax requests and display them. If you don't want this (ie. because of errors),
-      # you can use this option to disable sending the data through the headers.
-      capture_ajax: true
-
-      # The Debugbar can emulate the Clockwork headers, so you can use the Chrome
-      # Extension, without the server-side code. It uses Debugbar collectors instead.
-      clockwork: false
-
+      
       # Enable/disable DataCollectors
       collectors:
         events: false
@@ -66,6 +50,42 @@ mini_symfony:
           hints: true # Show hints for common mistakes
         routing:
           label: true
+```
 
-      route_prefix: _debugbar
+## Query collector
+Get performance information about your queries.
+
+### Configuration
+
+1. Enable the query logger for your dbal connection:
+```yaml
+services:
+  dbal_logger:
+    class: Doctrine\DBAL\Logging\DebugStack  
+  
+  dbal_config:
+    class: Doctrine\DBAL\Configuration
+    calls:
+      - [setSQLLogger, ['@dbal_logger']]
+  
+  dbal:
+    class: Doctrine\DBAL\Connection
+    factory: ['Doctrine\DBAL\DriverManager', getConnection]
+    arguments:
+      - '%database%'
+      - '@dbal_config'
+```
+
+2. Enable extra options for the query collector
+```yaml
+...
+options:
+    queries:
+      with_params: true # Render SQL with the parameters substituted
+      timeline: false # Add the queries to the timeline
+      explain:
+        enabled: false
+        types:
+          - SELECT # SELECT, INSERT, UPDATE, DELETE for MySQL 5.6.3+
+      hints: true # Show hints for common mistakes
 ```
