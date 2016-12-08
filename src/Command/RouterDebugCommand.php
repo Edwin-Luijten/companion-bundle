@@ -1,5 +1,12 @@
 <?php
-
+/*
+ * This file is part of the Symfony package.
+ *
+ * (c) Fabien Potencier <fabien@symfony.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 namespace MiniSymfony\CompanionBundle\Command;
 
 use MiniSymfony\CompanionBundle\Console\Helper\DescriptorHelper;
@@ -11,6 +18,12 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Routing\Route;
 
+/**
+ * A console command for retrieving information about routes.
+ *
+ * @author Fabien Potencier <fabien@symfony.com>
+ * @author Tobias Schultze <http://tobion.de>
+ */
 class RouterDebugCommand extends ContainerAwareCommand
 {
     /**

@@ -1,5 +1,12 @@
 <?php
-
+/*
+ * This file is part of the Symfony package.
+ *
+ * (c) Fabien Potencier <fabien@symfony.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 namespace MiniSymfony\CompanionBundle\Command;
 
 use MiniSymfony\CompanionBundle\Console\Helper\DescriptorHelper;
@@ -9,7 +16,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-
+/**
+ * A console command for retrieving information about event dispatcher.
+ *
+ * @author Matthieu Auger <mail@matthieuauger.com>
+ */
 class EventDispatcherDebugCommand extends ContainerAwareCommand
 {
     /**

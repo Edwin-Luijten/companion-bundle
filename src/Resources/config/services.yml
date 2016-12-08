@@ -1,7 +1,10 @@
 parameters:
-    debug.container.dump: %kernel.cache_dir%/%kernel.container_class%.xml
+    debug.container.dump: '%kernel.cache_dir%/%kernel.container_class%.xml'
 
 services:
+    #
+    # Debug console commands
+    #
     debug_container_command:
       class: MiniSymfony\CompanionBundle\Command\ContainerDebugCommand
       tags:
@@ -16,3 +19,28 @@ services:
       class: MiniSymfony\CompanionBundle\Command\EventDispatcherDebugCommand
       tags:
         - { name: console.command }
+
+    #
+    # Web profiler
+    #
+    companion.timed_event_dispatcher:
+        class: MiniSymfony\CompanionBundle\EventDispatcher\TimedEventDispatcher
+        arguments:
+            - '@service_container'
+
+    # Controllers
+    controller.asset:
+      class: MiniSymfony\CompanionBundle\Controllers\AssetController
+      arguments:
+        - '@debugbar'
+        - '@router'
+
+    # Debugbar
+    debugbar.request_subscriber:
+        class: MiniSymfony\CompanionBundle\EventSubscribers\RequestEventSubscriber
+        arguments:
+          - '@debugbar'
+          - '@event_dispatcher'
+          - '@kernel'
+        tags:
+            - { name: kernel.event_subscriber }
