@@ -47,6 +47,7 @@ class DebugBarPass implements CompilerPassInterface
             $definition->addMethodCall('boot');
             $container->setDefinition('debugbar', $definition);
         } else {
+
             $container->removeDefinition('controller.asset');
             $container->removeDefinition('debugbar.request_subscriber');
         }

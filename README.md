@@ -19,7 +19,15 @@ With the debug bar you can gather information about the following:
 - Timeline
 
 # Configuration
+routes.yml  
+```yaml
+...
+companion_bundle:
+  resource: '@CompanionBundle/Resources/config/routes.yml'
+  prefix: _debugbar
+```
 
+config.yml  
 ```yaml
 mini_symfony:
   debug:
