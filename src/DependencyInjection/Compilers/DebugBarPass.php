@@ -27,8 +27,8 @@ class DebugBarPass implements CompilerPassInterface
 
         $configs = $container->getExtensionConfig('mini_symfony');
 
-        $processor = new Processor();
-        $this->config    = $processor->processConfiguration(new Configuration(), [$configs[1], $configs[0]]);
+        $processor    = new Processor();
+        $this->config = $processor->processConfiguration(new Configuration(), [$configs[1], $configs[0]]);
 
         if ($this->config['debug']['debugbar']['enabled'] === true) {
             $definition = new Definition(DebugBar::class);
@@ -36,6 +36,9 @@ class DebugBarPass implements CompilerPassInterface
             $definition->addArgument($this->config['debug']['debugbar']);
             $definition->addMethodCall('boot', [$container->getDefinition('dbal')]);
             $container->setDefinition('debugbar', $definition);
+        } else {
+            $container->removeDefinition('controller.asset');
+            $container->removeDefinition('debugbar.request_subscriber');
         }
     }
 }
