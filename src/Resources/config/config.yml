@@ -43,5 +43,3 @@ mini_symfony:
           hints: true # Show hints for common mistakes
         routing:
           label: true
-
-      route_prefix: _debugbar

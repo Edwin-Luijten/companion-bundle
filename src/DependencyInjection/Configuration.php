@@ -60,7 +60,6 @@ class Configuration implements ConfigurationInterface
                                         ->end()
                                     ->end()
                                 ->end()
-                                ->scalarNode('route_prefix')->defaultValue('_debugbar')->end()
                             ->end()
                         ->end()
                     ->end() // debug
